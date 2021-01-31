@@ -14,7 +14,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'Laravel'),
-
+    'checkwx_token' => env('CHECKWX_TOKEN'),
     /*
     |--------------------------------------------------------------------------
     | Application Environment

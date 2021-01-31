@@ -4,26 +4,42 @@
 namespace App\Http\Controllers;
 
 
+use App\Services\MetarServiceInterface;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 
 class WeatherController extends Controller
 {
+    private $metarService;
+
+    public function __construct(MetarServiceInterface $metarService)
+    {
+        $this->metarService = $metarService;
+    }
+
     public function fetch(string $code)
     {
-        $request = Http::withOptions([
-            'curl'   => array( CURLOPT_SSL_VERIFYPEER => false, CURLOPT_SSL_VERIFYHOST => false ),
-            'verify' => false
-        ])->withHeaders([
-            'X-API-Key' => '8fda79a7324c4ccca65fc15896'
-        ])->get('https://api.checkwx.com/metar/'.$code.'/decoded');
+        try {
+            $data = $this->metarService->getWeather($code);
 
+            $data = [
+                'city' => $data['station']['name'],
+                'temperature' => $data['temperature']['celsius'],
+                'code' => $code
+            ];
+            return response()->json($data);
+        } catch (\Exception $exception) {
+            return response()->json(
+                [
+                    'error' => $exception->getMessage()
+                ], Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
 
-        $data = $request->json('data')[0];
-        $data = [
-            'city' => $data['station']['name'],
-            'temperature' => $data['temperature']['celsius'],
-            'code' => $code
-        ];
-        return response()->json($data);
+    public function list()
+    {
+        $data = $this->metarService->all();
+        return \response()->json($data);
     }
 }

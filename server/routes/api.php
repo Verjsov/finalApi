@@ -19,3 +19,4 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::get('/weather/{code}', [\App\Http\Controllers\WeatherController::class, 'fetch'])->name('weather.get');
+Route::get('/list', [\App\Http\Controllers\WeatherController::class, 'list'])->name('weather.list');
