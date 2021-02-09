@@ -20,3 +20,4 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::get('/weather/{code}', [\App\Http\Controllers\WeatherController::class, 'fetch'])->name('weather.get');
 Route::get('/list', [\App\Http\Controllers\WeatherController::class, 'list'])->name('weather.list');
+Route::post('/add/favorite/{code}', [\App\Http\Controllers\WeatherController::class, 'addFavorite'])->name('weather.favorite');

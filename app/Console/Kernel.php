@@ -25,7 +25,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command(ExportWeatherCommand::class)->everyMinute();
+        //$schedule->command(ExportWeatherCommand::class)->everyMinute();
         // $schedule->command('inspire')->hourly();
     }
 

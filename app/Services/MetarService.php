@@ -4,6 +4,7 @@
 namespace App\Services;
 
 
+use App\Models\Station;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
@@ -14,7 +15,8 @@ class MetarService implements MetarServiceInterface
 {
     public function getWeather(string $icao, int $refreshTime = self::REFRESH_TIME)
     {
-        if (!Cache::has($icao)) {
+        $key = "icao-$icao";
+        if (!Cache::get($key)) {
             $request = Http::withOptions([
                 'curl'   => array( CURLOPT_SSL_VERIFYPEER => false, CURLOPT_SSL_VERIFYHOST => false ),
                 'verify' => false
@@ -25,36 +27,35 @@ class MetarService implements MetarServiceInterface
             if (!$request->ok()) {
                 throw new RuntimeException('Server error');
             }
-
-
-            $data = $request->json('data')[0];
-            Redis::set('key:'.$icao, $icao);
-            Cache::put($icao, $data, $refreshTime);
-            return $data;
+            $data = $request->json('data');
+            if (!isset($data[0])){
+                throw new RuntimeException('Arrow empty');
+            }
+            Cache::put($key, $data[0], $refreshTime);
+            return $data[0];
         }
-        return Cache::get($icao);
+        return Cache::get($key);
     }
 
     public function all()
     {
-        $keys = Redis::keys('*');
+        $stations = Station::all();
+        $finaly = [];
+        foreach ($stations as $station){
+            try {
+                $data = $this->getWeather($station->icao);
+                $data['favorite'] = $station->favorite;
+                $finaly[] = $data;
+            }
+            catch (RuntimeException $e){
 
-        $allItems = [];
-
-        foreach ($keys as $key) {
-            $cacheKey = Str::after($key, ':');
-            $allItems[] = Cache::get($cacheKey);
+            }
         }
-
-        $data = [];
-        $dataCollection = collect($allItems);
-        $dataCollection->each(function($item) use (&$data) {
-            $data[] = [
-                'temperature' => $item['temperature']['celsius'],
-                'station' => $item['station']['name'],
-                'humidity' => $item['humidity']['percent']
-            ];
+        uasort($finaly,  function($a, $b) {
+            if ($a['favorite'] == $b['favorite'])
+                return 0;
+            return ($a['favorite'] > $b['favorite']) ? -1 : 1;
         });
-        return $data;
+        return collect($finaly);
     }
 }

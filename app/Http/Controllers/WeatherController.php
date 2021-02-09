@@ -4,9 +4,10 @@
 namespace App\Http\Controllers;
 
 
+
+use App\Models\Station;
 use App\Services\MetarServiceInterface;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Http;
 
 class WeatherController extends Controller
 {
@@ -21,12 +22,13 @@ class WeatherController extends Controller
     {
         try {
             $data = $this->metarService->getWeather($code);
-
+            /*
             $data = [
                 'city' => $data['station']['name'],
                 'temperature' => $data['temperature']['celsius'],
                 'code' => $code
             ];
+            */
             return response()->json($data);
         } catch (\Exception $exception) {
             return response()->json(
@@ -37,9 +39,17 @@ class WeatherController extends Controller
         }
     }
 
+    public function addFavorite (string $code)
+    {
+        $station = Station::where('icao',$code)->first();
+        $station->favorite = !$station->favorite;
+        $station->save();
+        return \response()->json(['status'=>'ok'],200);
+    }
+
     public function list()
     {
         $data = $this->metarService->all();
-        return \response()->json($data);
+        return view('welcome',compact('data'));
     }
 }
